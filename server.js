@@ -32,6 +32,16 @@ let accounts = [
     history: [
       { type: 'Account Created', amount: 1500, date: new Date().toLocaleString(), balance: 1500 }
     ]
+  },
+  {
+    id: 3,
+    name: 'Siva',
+    email: 'siva@gmail.com',
+    password: 'password123',
+    balance: 2000,
+    history: [
+      { type: 'Account Created', amount: 2000, date: new Date().toLocaleString(), balance: 2000 }
+    ]
   }
 ];
 
