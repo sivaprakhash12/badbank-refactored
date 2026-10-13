@@ -409,11 +409,12 @@
           <table class="table table-hover align-middle">
             <thead class="table-light">
               <tr>
+                <th style="width: 70px;">#ID</th>
                 <th>Account Holder</th>
                 <th>Email</th>
                 <th>Balance</th>
                 <th>Transactions</th>
-                <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody id="allDataTableBody">
@@ -665,7 +666,7 @@
 
     async function loadAllData() {
       const tbody = document.getElementById('allDataTableBody');
-      tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-hourglass-split me-2"></i>Loading accounts...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-hourglass-split me-2"></i>Loading accounts...</td></tr>`;
 
       try {
         const res = await fetch('/account/all');
@@ -673,19 +674,43 @@
         
         tbody.innerHTML = '';
         list.forEach(a => {
+          const isCurrent = currentUser && currentUser.email.toLowerCase() === a.email.toLowerCase();
           const row = `
-            <tr>
-              <td class="fw-bold">${a.name}</td>
+            <tr class="${isCurrent ? 'table-primary-subtle' : ''}">
+              <td><span class="badge bg-dark px-2 py-1">#${a.id}</span></td>
+              <td class="fw-bold">${a.name} ${isCurrent ? '<span class="badge bg-success ms-1">Current</span>' : ''}</td>
               <td class="text-muted small">${a.email}</td>
               <td class="fw-bold text-primary">$${Number(a.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
               <td><span class="badge bg-secondary">${a.transactionsCount} entries</span></td>
-              <td><span class="badge bg-success-subtle text-success">Verified</span></td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="selectUserByEmail('${a.email}')">
+                  <i class="bi bi-person-check me-1"></i> Use
+                </button>
+              </td>
             </tr>
           `;
           tbody.innerHTML += row;
         });
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-danger text-center">Failed to load data. Ensure server is running.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-danger text-center">Failed to load data. Ensure server is running.</td></tr>`;
+      }
+    }
+
+    async function selectUserByEmail(email) {
+      try {
+        const res = await fetch(`/account/balance/${encodeURIComponent(email)}`);
+        const data = await res.json();
+        if (res.ok) {
+          currentUser = {
+            name: data.name,
+            email: data.email,
+            balance: data.balance
+          };
+          updateUserUI();
+          showSection('deposit');
+        }
+      } catch (e) {
+        console.error('Error selecting user:', e);
       }
     }
 

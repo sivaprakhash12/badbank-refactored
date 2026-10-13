@@ -53,8 +53,9 @@ function handleCreate(req, res) {
     return res.status(400).json({ error: 'An account with this email already exists.' });
   }
 
+  const maxId = accounts.reduce((max, a) => Math.max(max, Number(a.id) || 0), 0);
   const newAccount = {
-    id: accounts.length + 1,
+    id: maxId + 1,
     name,
     email,
     password,
@@ -173,15 +174,33 @@ function handleWithdraw(req, res) {
 app.post('/account/withdraw/:email/:amount', handleWithdraw);
 app.get('/account/withdraw/:email/:amount', handleWithdraw);
 
-// 7. All Data (Audit ledger)
+// 7. Get account by ID
+app.get('/account/id/:id', (req, res) => {
+  const reqId = Number(req.params.id);
+  const user = accounts.find(a => Number(a.id) === reqId);
+  if (!user) {
+    return res.status(404).json({ error: `Account with ID ${req.params.id} not found.` });
+  }
+  res.json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    balance: user.balance,
+    history: user.history || []
+  });
+});
+
+// 8. All Data (Audit ledger) - Returns all accounts with ID
 app.get('/account/all', (req, res) => {
-  // Returns safe sanitized data with transactions
-  const safeAccounts = accounts.map(a => ({
-    name: a.name,
-    email: a.email,
-    balance: a.balance,
-    transactionsCount: a.history.length,
-    history: a.history
+  const safeAccounts = accounts.map((a, idx) => ({
+    id: a.id !== undefined ? a.id : idx + 1,
+    name: a.name || 'Unnamed Account',
+    email: a.email || 'N/A',
+    balance: typeof a.balance === 'number' ? a.balance : Number(a.balance) || 0,
+    transactionsCount: (a.history && Array.isArray(a.history)) ? a.history.length : 1,
+    history: a.history || [
+      { type: 'Account Initialized', amount: a.balance || 0, date: new Date().toLocaleString(), balance: a.balance || 0 }
+    ]
   }));
   res.json(safeAccounts);
 });
